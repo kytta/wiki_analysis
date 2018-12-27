@@ -1,0 +1,6 @@
+requests
+psycopg2
+psycopg2-binary
+beautifulsoup4
+numpy
+pandas
