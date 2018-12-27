@@ -1,5 +1,9 @@
 # wiki_analysis
 
+[![](https://img.shields.io/travis/NickKaramoff/wiki_analysis.svg)](https://travis-ci.org/NickKaramoff/wiki_analysis/)
+[![](https://img.shields.io/codeclimate/maintainability/NickKaramoff/wiki_analysis.svg)](https://codeclimate.com/github/NickKaramoff/wiki_analysis)
+[![](https://img.shields.io/codecov/c/github/NickKaramoff/wiki_analysis.svg)](https://codecov.io/gh/NickKaramoff/wiki_analysis)
+
 This project analyzes pages of a chosen Wikipedia to find the most valuable page
 using the PageRank algorithm.
 
