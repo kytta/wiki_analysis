@@ -13,9 +13,9 @@ iterations).
 ## Speed
 
 Speed of the algorithm depends on data size and your internet connection.
-On my 60 Mbit/s network fetching and analyzing the Greenlandic Wikipedia (kl)
-with 1756 unique pages took an hour. Calculating takes about 2 seconds on a
-MacBook Pro 15 2016.
+On my 60 Mbit/s network fetching and analyzing the
+[Greenlandic Wikipedia](https://kl.wikipedia.org) with 1756 unique pages took an
+hour. Calculating rank takes about 2 seconds on a MacBook Pro 15 2016.
 
 ## How to Run
 
@@ -40,24 +40,24 @@ do after analyzing the pages (after step 4)
 If a request failed on some crosslink it will record NULL value to the database.
 To fix, run
 
-```
-DELETE FROM %code%_wiki_rel
+```sql
+DELETE FROM LCODE_wiki_rel
 WHERE from_url ISNULL or to_url ISNULL;
 ```
 
-where `%code%` is the language code of analyzed Wikipedia.
+where `LCODE` is the language code of analyzed Wikipedia.
 
 ### Non-articles
 
 The algorithm currently records links for images and other files. If you only
 want articles, run:
 
-```
-DELETE FROM %code%_wiki_rel
+```sql
+DELETE FROM LCODE_wiki_rel
 WHERE from_url NOT ILIKE '%index.php%' or to_url NOT ILIKE '%index.php%';
 
-DELETE FROM %code%_wiki
+DELETE FROM LCODE_wiki
 WHERE page_url NOT ILIKE '%index.php%';
 ```
 
-where `%code%` is the language code of analyzed Wikipedia.
+where `LCODE` is the language code of analyzed Wikipedia.
