@@ -14,7 +14,7 @@ env:
     - PGPORT=55432
 
 install:
-  - pip install -r requirements.py
+  - pip install -r requirements.txt
 
 before_script:
   - psql -c 'CREATE ROLE wiki SUPERUSER LOGIN PASSWORD \'wiki\';' -U postgres
