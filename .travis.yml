@@ -12,6 +12,9 @@ env:
 services:
   - postgresql
 
+addons:
+  postgresql: '10'
+
 install:
   - pip install -r requirements.txt
 
