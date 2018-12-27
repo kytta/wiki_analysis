@@ -5,12 +5,12 @@ python:
   - "3.5"
   - "3.6"
 
-services:
-  - postgresql
-
 env:
   global:
     - PGPORT=55432
+
+services:
+  - postgresql
 
 install:
   - pip install -r requirements.txt
