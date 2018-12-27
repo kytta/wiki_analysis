@@ -1,0 +1,21 @@
+language: python
+python:
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "3.7"
+
+services:
+  - postgresql
+
+env:
+  global:
+    - PGPORT=55432
+
+install:
+  - pip install -r requirements.py
+
+before_script:
+  - psql -c 'CREATE ROLE wiki SUPERUSER LOGIN PASSWORD \'wiki\';' -U postgres
+  - psql -c 'CREATE DATABASE wiki_analysis;' -U postgres
