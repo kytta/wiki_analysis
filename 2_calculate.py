@@ -1,11 +1,12 @@
-import sys
+#  Copyright (c) 2018 Nikita Karamov <nick@karamoff.ru>
 
+import sys
 import psycopg2
 import numpy as np
 import pandas as pd
 
 domain_prefix = input("Domain prefix: ")
-table_name = domain_prefix+'_wiki'
+table_name = domain_prefix + '_wiki'
 
 
 def check_table(conn):
@@ -26,7 +27,7 @@ def check_table(conn):
             SELECT 1 
             FROM information_schema.tables 
             WHERE table_schema='public' AND table_name=%s)""",
-        (table_name+'_rel',)
+        (table_name + '_rel',)
     )
     rel_table_exists = cur.fetchone()[0]
 
@@ -42,7 +43,7 @@ def get_rels(conn):
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM %s;"
-        % (table_name+'_rel',)
+        % (table_name + '_rel',)
     )
     print("Got links info")
     print()
@@ -56,7 +57,7 @@ def calculate(data):
     urls_fr = list(num[0] for num in data[np.ix_(range(dl), [0])].tolist())
     urls_to = list(num[0] for num in data[np.ix_(range(dl), [1])].tolist())
 
-    all_urls = list(sorted(set(urls_fr+urls_to)))
+    all_urls = list(sorted(set(urls_fr + urls_to)))
     all_titles = list(url.split('title=')[1] for url in all_urls)
 
     n = len(all_urls)
@@ -80,13 +81,13 @@ def calculate(data):
     v = np.full((n, 1), 1 / n, np.float)
 
     for i in range(20):
-        v = (b*m).dot(v) + ((1-b)/n)*e
+        v = (b * m).dot(v) + ((1 - b) / n) * e
 
     print("Calculation finished")
     print()
     pd.set_option('display.max_colwidth', -1)
-    df = pd.DataFrame({'title': all_titles, 'rank': list(v), 'url': all_urls})\
-        .sort_values('rank', ascending=False)\
+    df = pd.DataFrame({'title': all_titles, 'rank': list(v), 'url': all_urls}) \
+        .sort_values('rank', ascending=False) \
         .head(25)
 
     return df
