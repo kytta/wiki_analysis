@@ -1,3 +1,5 @@
+#  Copyright (c) 2018 Nikita Karamov <nick@karamoff.ru>
+
 import time
 import psycopg2
 import requests
@@ -6,8 +8,8 @@ from bs4 import BeautifulSoup as Bs
 import re
 
 domain_prefix = input("Domain prefix: ")
-prefix = "https://"+domain_prefix+".wikipedia.org"
-table_name = domain_prefix+'_wiki'
+prefix = "https://" + domain_prefix + ".wikipedia.org"
+table_name = domain_prefix + '_wiki'
 
 
 def create_tables(conn):
@@ -61,9 +63,9 @@ def create_tables(conn):
         "CREATE TABLE "
         + table_name + '_rel'
         + " ("
-          "from_url VARCHAR(2047) REFERENCES "+table_name+"(page_url),"
-          "to_url VARCHAR(2047) REFERENCES "+table_name+"(page_url)"
-          ")"
+          "from_url VARCHAR(2047) REFERENCES " + table_name + "(page_url),"
+                                                              "to_url VARCHAR(2047) REFERENCES " + table_name + "(page_url)"
+                                                                                                                ")"
     )
     conn.commit()
     print("Table for pages relations created")
@@ -74,8 +76,8 @@ def add_to_database(conn, url, name):
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO " + table_name + "(page_url, page_title) "
-        "VALUES(%s, %s)"
-        "ON CONFLICT (page_url) DO NOTHING",
+                                      "VALUES(%s, %s)"
+                                      "ON CONFLICT (page_url) DO NOTHING",
         (url, name)
     )
     conn.commit()
@@ -110,26 +112,32 @@ def analyze(conn, url, all_pages):
         soup = Bs(p.content, 'html.parser')
         unique_url, unique_name = unique(soup, url)
 
-        if unique_url not in all_pages:
-            add_to_database(conn, unique_url, unique_name)
-            all_pages.append(unique_url)
+        if 'index.php' in unique_url:
+            if unique_url not in all_pages:
+                add_to_database(conn, unique_url, unique_name)
+                all_pages.append(unique_url)
 
-            links = soup.select("#mw-content-text > .mw-parser-output > p > a")
+                links = soup.select(
+                    "#mw-content-text > .mw-parser-output > p > a")
 
-            print(f"{soup.select('#firstHeading')[0].get_text()}")
+                print(f"{soup.select('#firstHeading')[0].get_text()}")
 
-            for link in links:
-                if link.has_attr('href') and link['href'][0] == '/':
-                    if link.has_attr('class') and 'new' in link.attrs['class']:
-                        continue
-                    link_url = prefix + link['href']
-                    link_unique_url = analyze(conn, link_url, all_pages)
-                    register_link(conn, unique_url, link_unique_url)
+                for link in links:
+                    if link.has_attr('href') and link['href'][0] == '/':
+                        if link.has_attr('class') and 'new' in link.attrs['class']:
+                            continue
+                        link_url = prefix + link['href']
+                        link_unique_url = analyze(conn, link_url, all_pages)
+                        if link_unique_url:
+                            register_link(conn, unique_url, link_unique_url)
 
-        return unique_url
+            return unique_url
+        else:
+            return None
 
     except Exception:
         print("Couldn't get " + url)
+        return None
 
 
 def get_and_write_pages(conn):
@@ -151,7 +159,8 @@ def get_and_write_pages(conn):
                 finished = True
             else:
                 next_link = prefix + \
-                            list(soup.select('.mw-allpages-nav')[0].children)[-1]['href']
+                            list(soup.select('.mw-allpages-nav')[0].children)[
+                                -1]['href']
         else:
             finished = True
 
@@ -160,10 +169,11 @@ def get_and_write_pages(conn):
 
         for page in pages:
             if page != '\n':
-                analyze(conn, prefix + list(page.children)[0]['href'], all_pages)
+                analyze(conn, prefix + list(page.children)[0]['href'],
+                        all_pages)
         counter += 1
     print(f"Analyzed {len(all_pages)} pages!")
-    print(f"It took {time.perf_counter()-start}s")
+    print(f"It took {time.perf_counter() - start}s")
     print()
 
 
