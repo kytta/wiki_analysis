@@ -110,26 +110,31 @@ def analyze(conn, url, all_pages):
         soup = Bs(p.content, 'html.parser')
         unique_url, unique_name = unique(soup, url)
 
-        if unique_url not in all_pages:
-            add_to_database(conn, unique_url, unique_name)
-            all_pages.append(unique_url)
+        if 'index.php' in unique_url:
+            if unique_url not in all_pages:
+                add_to_database(conn, unique_url, unique_name)
+                all_pages.append(unique_url)
 
-            links = soup.select("#mw-content-text > .mw-parser-output > p > a")
+                links = soup.select("#mw-content-text > .mw-parser-output > p > a")
 
-            print(f"{soup.select('#firstHeading')[0].get_text()}")
+                print(f"{soup.select('#firstHeading')[0].get_text()}")
 
-            for link in links:
-                if link.has_attr('href') and link['href'][0] == '/':
-                    if link.has_attr('class') and 'new' in link.attrs['class']:
-                        continue
-                    link_url = prefix + link['href']
-                    link_unique_url = analyze(conn, link_url, all_pages)
-                    register_link(conn, unique_url, link_unique_url)
+                for link in links:
+                    if link.has_attr('href') and link['href'][0] == '/':
+                        if link.has_attr('class') and 'new' in link.attrs['class']:
+                            continue
+                        link_url = prefix + link['href']
+                        link_unique_url = analyze(conn, link_url, all_pages)
+                        if link_unique_url:
+                            register_link(conn, unique_url, link_unique_url)
 
-        return unique_url
+            return unique_url
+        else:
+            return None
 
     except Exception:
         print("Couldn't get " + url)
+        return None
 
 
 def get_and_write_pages(conn):
