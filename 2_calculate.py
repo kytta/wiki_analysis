@@ -4,6 +4,7 @@ import sys
 import psycopg2
 import numpy as np
 import pandas as pd
+import yaml
 
 domain_prefix = input("Domain prefix: ")
 table_name = domain_prefix + '_wiki'
@@ -97,15 +98,20 @@ def main():
     print(f"Let's calculate the PageRank of the {domain_prefix} Wikipedia")
     print()
 
+    print("Loading config...")
+    config = yaml.load(open('config.yml').read())
+    db_conf = config['database']
+    print()
+
     print("Connecting to database...")
     conn = None
 
     try:
-        conn = psycopg2.connect(host='localhost',
-                                database='wiki_analysis',
-                                user='wiki',
-                                password='wiki',
-                                port='55432')
+        conn = psycopg2.connect(host=db_conf['host'] or 'localhost',
+                                database=db_conf['dbname'] or 'wiki_analysis',
+                                user=db_conf['username'] or 'wiki',
+                                password=db_conf['password'] or 'wiki',
+                                port=db_conf['port'] or '5432')
         print("Connected to database")
     except psycopg2.DatabaseError:
         sys.exit("Connection to database failed.")
