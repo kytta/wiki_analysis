@@ -1,6 +1,5 @@
-requests
-psycopg2
-psycopg2-binary
-beautifulsoup4
-numpy
-pandas
+requests==2.21.0
+psycopg2==2.7.6.1
+beautifulsoup4==4.6.3
+numpy==1.15.4
+pandas==0.23.4
