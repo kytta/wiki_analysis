@@ -107,11 +107,13 @@ def main():
     conn = None
 
     try:
-        conn = psycopg2.connect(host=db_conf['host'] or 'localhost',
-                                database=db_conf['dbname'] or 'wiki_analysis',
-                                user=db_conf['username'] or 'wiki',
-                                password=db_conf['password'] or 'wiki',
-                                port=db_conf['port'] or '5432')
+        conn = psycopg2.connect(
+            host=db_conf.get('host') or 'localhost',
+            database=db_conf.get('dbname') or 'wiki_analysis',
+            user=db_conf.get('username') or 'wiki',
+            password=db_conf.get('password') or 'wiki',
+            port=db_conf.get('port') or '5432'
+        )
         print("Connected to database")
     except psycopg2.DatabaseError:
         sys.exit("Connection to database failed.")
