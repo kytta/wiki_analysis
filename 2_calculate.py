@@ -1,12 +1,14 @@
-#  Copyright (c) 2018 Nikita Karamov <nick@karamoff.ru>
+# Copyright (c) 2018 Nikita Karamov <nick@karamoff.ru>
+# version 0.3
 
 import sys
 import psycopg2
 import numpy as np
 import pandas as pd
+import yaml
 
 domain_prefix = input("Domain prefix: ")
-table_name = domain_prefix + '_wiki'
+table_name = domain_prefix
 
 
 def check_table(conn):
@@ -27,7 +29,7 @@ def check_table(conn):
             SELECT 1 
             FROM information_schema.tables 
             WHERE table_schema='public' AND table_name=%s)""",
-        (table_name + '_rel',)
+        (table_name + '_links',)
     )
     rel_table_exists = cur.fetchone()[0]
 
@@ -43,7 +45,7 @@ def get_rels(conn):
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM %s;"
-        % (table_name + '_rel',)
+        % (table_name + '_links',)
     )
     print("Got links info")
     print()
@@ -57,16 +59,15 @@ def calculate(data):
     urls_fr = list(num[0] for num in data[np.ix_(range(dl), [0])].tolist())
     urls_to = list(num[0] for num in data[np.ix_(range(dl), [1])].tolist())
 
-    all_urls = list(sorted(set(urls_fr + urls_to)))
-    all_titles = list(url.split('title=')[1] for url in all_urls)
+    all_titles = list(sorted(set(urls_fr + urls_to)))
 
-    n = len(all_urls)
+    n = len(all_titles)
     m = np.zeros((n, n), dtype=np.float)
 
     for pair in data:
         try:
-            idx_fr = all_urls.index(pair[0])
-            idx_to = all_urls.index(pair[1])
+            idx_fr = all_titles.index(pair[0])
+            idx_to = all_titles.index(pair[1])
             m[idx_to][idx_fr] += 1
         except ValueError:
             continue
@@ -86,7 +87,7 @@ def calculate(data):
     print("Calculation finished")
     print()
     pd.set_option('display.max_colwidth', -1)
-    df = pd.DataFrame({'title': all_titles, 'rank': list(v), 'url': all_urls}) \
+    df = pd.DataFrame({'title': all_titles, 'rank': list(v)}) \
         .sort_values('rank', ascending=False) \
         .head(25)
 
@@ -97,15 +98,22 @@ def main():
     print(f"Let's calculate the PageRank of the {domain_prefix} Wikipedia")
     print()
 
+    print("Loading config...")
+    config = yaml.load(open('config.yml').read())
+    db_conf = config['database']
+    print()
+
     print("Connecting to database...")
     conn = None
 
     try:
-        conn = psycopg2.connect(host='localhost',
-                                database='wiki_analysis',
-                                user='wiki',
-                                password='wiki',
-                                port='55432')
+        conn = psycopg2.connect(
+            host=db_conf.get('host') or 'localhost',
+            database=db_conf.get('dbname') or 'wiki_analysis',
+            user=db_conf.get('username') or 'wiki',
+            password=db_conf.get('password') or 'wiki',
+            port=db_conf.get('port') or '5432'
+        )
         print("Connected to database")
     except psycopg2.DatabaseError:
         sys.exit("Connection to database failed.")
