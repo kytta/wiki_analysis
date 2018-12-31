@@ -1,4 +1,5 @@
-#  Copyright (c) 2018 Nikita Karamov <nick@karamoff.ru>
+# Copyright (c) 2018 Nikita Karamov <nick@karamoff.ru>
+# version 0.3
 
 import time
 import psycopg2
