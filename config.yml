@@ -1,6 +1,6 @@
 database:
   host: localhost
-  port: 55432
-  dbname: wiki_analysis
+  port: 5432
+  dbname: wiki
   username: wiki
   password: wiki

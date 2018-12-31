@@ -10,7 +10,7 @@ import yaml
 
 domain_prefix = input("Domain prefix: ")
 prefix = "https://" + domain_prefix + ".wikipedia.org"
-table_name = domain_prefix + '_wiki'
+table_name = domain_prefix
 
 
 def create_tables(conn):
@@ -23,13 +23,13 @@ def create_tables(conn):
             SELECT 1 
             FROM information_schema.tables 
             WHERE table_schema='public' AND table_name=%s)""",
-        (table_name + '_rel',)
+        (table_name + '_links',)
     )
     table_exists = cur.fetchone()[0]
     if table_exists:
         print("Old table exists, dropping...")
         cur.execute(
-            "DROP TABLE " + table_name + '_rel'
+            "DROP TABLE " + table_name + '_links'
         )
 
     # check pages table - drop if exists
@@ -52,8 +52,8 @@ def create_tables(conn):
         "CREATE TABLE "
         + table_name
         + " ("
-          "page_url VARCHAR(2047) PRIMARY KEY,"
-          "page_title VARCHAR(256)"
+          "title VARCHAR(256) PRIMARY KEY,"
+          "unique_url VARCHAR(2047)"
           ")"
     )
     conn.commit()
@@ -62,24 +62,27 @@ def create_tables(conn):
     # create and bind rel table
     cur.execute(
         "CREATE TABLE "
-        + table_name + '_rel'
+        + table_name + '_links'
         + " ("
-          "from_url VARCHAR(2047) REFERENCES " + table_name + "(page_url),"
-                                                              "to_url VARCHAR(2047) REFERENCES " + table_name + "(page_url)"
-                                                                                                                ")"
+          "from_title VARCHAR(256) REFERENCES "
+        + table_name + "(title),"
+        + "to_title VARCHAR(256) REFERENCES "
+        + table_name + "(title)"
+                       ")"
     )
     conn.commit()
     print("Table for pages relations created")
     print()
 
 
-def add_to_database(conn, url, name):
+def add_to_database(conn, page_url, page_title):
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO " + table_name + "(page_url, page_title) "
-                                      "VALUES(%s, %s)"
-                                      "ON CONFLICT (page_url) DO NOTHING",
-        (url, name)
+        "INSERT INTO " + table_name
+        + "(unique_url, title) "
+          "VALUES(%s, %s)"
+          "ON CONFLICT (title) DO NOTHING",
+        (page_url, page_title)
     )
     conn.commit()
 
@@ -95,13 +98,13 @@ def unique(soup, url):
     return unique_url, name
 
 
-def register_link(conn, from_url, to_url):
+def register_link(conn, from_title, to_title):
     cur = conn.cursor()
 
     cur.execute(
-        "INSERT INTO " + table_name + "_rel (from_url, to_url)" +
+        "INSERT INTO " + table_name + "_links (from_title, to_title)" +
         " VALUES (%s, %s)",
-        (from_url, to_url)
+        (from_title, to_title)
     )
 
     conn.commit()
@@ -109,14 +112,16 @@ def register_link(conn, from_url, to_url):
 
 def analyze(conn, url, all_pages):
     try:
-        p = requests.get(url)
+        p = requests.get(url,
+                         headers={'User-Agent': 'wiki_analysis/0.3'},
+                         timeout=30)
         soup = Bs(p.content, 'html.parser')
         unique_url, unique_name = unique(soup, url)
 
         if 'index.php' in unique_url:
-            if unique_url not in all_pages:
+            if unique_name not in all_pages:
                 add_to_database(conn, unique_url, unique_name)
-                all_pages.append(unique_url)
+                all_pages.append(unique_name)
 
                 links = soup.select(
                     "#mw-content-text > .mw-parser-output > p > a")
@@ -128,16 +133,19 @@ def analyze(conn, url, all_pages):
                         if link.has_attr('class') and 'new' in link.attrs['class']:
                             continue
                         link_url = prefix + link['href']
-                        link_unique_url = analyze(conn, link_url, all_pages)
-                        if link_unique_url:
-                            register_link(conn, unique_url, link_unique_url)
+                        link_unique_name = analyze(conn, link_url, all_pages)
+                        if link_unique_name:
+                            register_link(conn, unique_name, link_unique_name)
 
-            return unique_url
+            return unique_name
         else:
             return None
 
-    except Exception:
-        print("Couldn't get " + url)
+    except requests.exceptions.Timeout:
+        print(url + " timed out")
+        return None
+    except requests.exceptions.ConnectionError:
+        print("Couldn't connect to " + url)
         return None
 
 
