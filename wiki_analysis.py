@@ -4,6 +4,8 @@ import sys
 import time
 
 from bs4 import BeautifulSoup as Bs
+import numpy as np
+import pandas as pd
 import psycopg2
 import requests
 import yaml
@@ -17,6 +19,8 @@ HOST = f"https://{LANG}.wikipedia.org"
 ALL_PAGES = "/wiki/Special:AllPages"
 HEADERS = {'User-Agent': 'wiki_analysis/0.3'}
 TIMEOUT = 30
+ITERATIONS = 20
+TOP_PAGES_AMOUNT = 25
 
 pages = []
 
@@ -50,6 +54,7 @@ drop_tables = input(f"The script is about to drop tables (if they exist):\n"
                     "Do you wish to proceed? [y/n]: ")
 if drop_tables.lower() == 'n':
     print("Please, drop or rename tables or choose a different language.")
+    CONN.close()
     sys.exit(0)
 print("Dropping old tables...")
 CUR.execute(f"DROP TABLE IF EXISTS {TABLE_NAME}_urls;")
@@ -147,7 +152,7 @@ def analyze(article_url):
         if title not in pages:
             add_to_database(title)
             pages.append(title)
-            print(f"\rParsing {title}... ({len(pages)-1} analyzed)", end='')
+            print(f"\r{len(pages) - 1} analyzed. Parsing {title}...", end='')
 
             links = a_soup.select(".mw-parser-output > p > a")
             for link in links:
@@ -196,4 +201,58 @@ while not finished:
 end = time.perf_counter()
 print("\r ", end='')
 print(f"\rAll {len(pages)} pages analyzed! Took {round(end - start, 4)} ms.")
+print()
+
+# DATASET FETCHING
+print("Preparing data for analysis...")
+CUR.execute("SELECT from_title, to_title "
+            f"FROM {TABLE_NAME}_links;")
+data = np.array(CUR.fetchall())
+CONN.commit()
+link_count = len(data)
+if link_count == 0:
+    CONN.close()
+    print("There are no links; can't analyze.")
+    sys.exit(0)
+from_titles = list(n[0] for n in data[np.ix_(range(link_count), [0])].tolist())
+to_titles = list(n[0] for n in data[np.ix_(range(link_count), [1])].tolist())
+all_titles = list(sorted(set(from_titles + to_titles)))
+print("Data prepared.")
+print()
+
+# CALCULATING
+print("Calculating...")
+n = len(all_titles)
+m = np.zeros((n, n), dtype=np.float)
+b = 0.85
+e = np.ones((n, 1), dtype=np.int)
+v = np.full((n, 1), 1 / n, np.float)
+for pair in data:
+    try:
+        idx_fr = all_titles.index(pair[0])
+        idx_to = all_titles.index(pair[1])
+        m[idx_to][idx_fr] += 1
+    except ValueError:
+        continue
+for i in range(n):
+    col_sum = np.sum(m[np.ix_(range(n), [i])], dtype=np.int)
+    if col_sum != 0:
+        m[np.ix_(range(n), [i])] /= col_sum
+for i in range(ITERATIONS):
+    v = (b * m).dot(v) + ((1 - b) / n) * e
+print("Calculation finished.")
+print()
+
+# DATA OUTPUT
+print(f"Top {TOP_PAGES_AMOUNT} pages")
+pd.set_option('display.max_colwidth', -1)
+df = pd.DataFrame({'title': all_titles, 'rank': list(v)}) \
+    .sort_values('rank', ascending=False) \
+    .head(TOP_PAGES_AMOUNT)
+print(df)
+print()
+
+# EXITING
+print("Closing connection...")
 CONN.close()
+print("Connection closed.")
