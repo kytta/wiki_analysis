@@ -25,11 +25,13 @@ hour. Calculating rank takes about 2 seconds on a MacBook Pro 15 2016.
 
 ## How to Run
 
-1. Download the script
-2. Put the database credentials into `config.yml`
-2. Launch the `wiki_analysis.py`
-3. Enter the domain prefix (the one you see in the Wikipedia URL, like 'en' for
+1. Make sure you have Python 3.x installed
+2. Download and unpack wiki_analysis
+3. Run `python3 -m pip install -r requirements.txt` to install dependencies
+4. Put the database credentials into `config.yml`
+5. Launch the `wiki_analysis.py`
+6. Enter the domain prefix (the one you see in the Wikipedia URL, like 'en' for
    English)
-4. Wait patiently. Sometimes it may break; the reason being the Internet
+7. Wait patiently. Sometimes it may break; the reason being the Internet
    connection. You will be notified if that happens
-5. The app will present you top 25 most valuable pages based on rank
+8. The app will present you top 25 most valuable pages based on rank
