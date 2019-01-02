@@ -1,5 +1,7 @@
 # Copyright (c) 2019 Nikita Karamov <nick@karamoff.ru>
 
+import argparse
+import shutil
 import sys
 import time
 
@@ -13,7 +15,20 @@ import yaml
 if __name__ == '__main__':
     pass
 
-LANG = input("Wikipedia language code: ")
+# PARSE ARGS
+parser = argparse.ArgumentParser(add_help=True)
+parser.add_argument('lang',
+                    help='language of the wiki')
+parser.add_argument('-c',
+                    metavar='CONFIG_FILE',
+                    help='specify a different config file')
+parser.add_argument('-d', '--drop',
+                    action='store_true', help='drop the table if it exists')
+parser.add_argument('-a', '--analyze',
+                    action='store_true', help='only analyze existing data')
+args = parser.parse_args()
+
+LANG = args.lang
 TABLE_NAME = LANG
 HOST = f"https://{LANG}.wikipedia.org"
 ALL_PAGES = "/wiki/Special:AllPages"
@@ -21,6 +36,7 @@ HEADERS = {'User-Agent': 'wiki_analysis/0.3'}
 TIMEOUT = 30
 ITERATIONS = 20
 TOP_PAGES_AMOUNT = 25
+TERMINAL_WIDTH = shutil.get_terminal_size().columns
 
 pages = []
 
@@ -46,35 +62,45 @@ except psycopg2.DatabaseError:
     sys.exit("Connection to database failed.")
 print()
 
-# TABLES DROP AND CREATION
-drop_tables = input(f"The script is about to drop tables (if they exist):\n"
-                    f"\t- {LANG}\n"
-                    f"\t- {LANG}_links\n"
-                    f"\t- {LANG}_urls\n\n"
-                    "Do you wish to proceed? [y/n]: ")
-if drop_tables.lower() == 'n':
-    print("Please, drop or rename tables or choose a different language.")
-    CONN.close()
-    sys.exit(0)
-print("Dropping old tables...")
-CUR.execute(f"DROP TABLE IF EXISTS {TABLE_NAME}_urls;")
-CUR.execute(f"DROP TABLE IF EXISTS {TABLE_NAME}_links;")
-CUR.execute(f"DROP TABLE IF EXISTS {TABLE_NAME};")
-CONN.commit()
-CUR.execute(f"CREATE TABLE {TABLE_NAME} ("
-            "title VARCHAR(256) PRIMARY KEY);")
-CUR.execute(f"CREATE TABLE {TABLE_NAME}_links ("
-            f"from_title VARCHAR(256) REFERENCES {TABLE_NAME}(title) "
-            "ON DELETE CASCADE,"
-            f"to_title VARCHAR(256) REFERENCES {TABLE_NAME}(title) "
-            "ON DELETE CASCADE);")
-CUR.execute(f"CREATE TABLE {TABLE_NAME}_urls ("
-            f"title VARCHAR(256) REFERENCES {TABLE_NAME}(title) "
-            f"ON DELETE CASCADE,"
-            "url VARCHAR(2047));")
-CONN.commit()
-print("New tables created.")
-print()
+if not args.analyze:
+    # TABLES DROP AND CREATION
+    CUR.execute("SELECT exists("
+                "SELECT 1 FROM information_schema.tables "
+                f"WHERE table_schema='public' AND table_name='{LANG}')")
+    exists = CUR.fetchone()
+    CUR.execute("SELECT exists("
+                "SELECT 1 FROM information_schema.tables "
+                f"WHERE table_schema='public' AND table_name='{LANG}_urls')")
+    exists = exists or CUR.fetchone()
+    CUR.execute("SELECT exists("
+                "SELECT 1 FROM information_schema.tables "
+                f"WHERE table_schema='public' AND table_name='{LANG}_links')")
+    exists = exists or CUR.fetchone()
+    if exists and not args.drop:
+        print(f"Tables with prefix {LANG} exist in database. Drop or rename "
+              "them. You can also run the script with -d flag to drop the "
+              "tables.")
+        CONN.close()
+        sys.exit(0)
+    print("Dropping old tables...")
+    CUR.execute(f"DROP TABLE IF EXISTS {TABLE_NAME}_urls;")
+    CUR.execute(f"DROP TABLE IF EXISTS {TABLE_NAME}_links;")
+    CUR.execute(f"DROP TABLE IF EXISTS {TABLE_NAME};")
+    CONN.commit()
+    CUR.execute(f"CREATE TABLE {TABLE_NAME} ("
+                "title VARCHAR(256) PRIMARY KEY);")
+    CUR.execute(f"CREATE TABLE {TABLE_NAME}_links ("
+                f"from_title VARCHAR(256) REFERENCES {TABLE_NAME}(title) "
+                "ON DELETE CASCADE,"
+                f"to_title VARCHAR(256) REFERENCES {TABLE_NAME}(title) "
+                "ON DELETE CASCADE);")
+    CUR.execute(f"CREATE TABLE {TABLE_NAME}_urls ("
+                f"title VARCHAR(256) REFERENCES {TABLE_NAME}(title) "
+                f"ON DELETE CASCADE,"
+                "url VARCHAR(2047));")
+    CONN.commit()
+    print("New tables created.")
+    print()
 
 
 def find_in_database(url):
@@ -152,7 +178,9 @@ def analyze(article_url):
         if title not in pages:
             add_to_database(title)
             pages.append(title)
-            print(f"\r{len(pages) - 1} analyzed. Parsing {title}...", end='')
+            print(f"\r{len(pages) - 1} analyzed. "
+                  f"Parsing {title}".ljust(TERMINAL_WIDTH),
+                  end='')
 
             links = a_soup.select(".mw-parser-output > p > a")
             for link in links:
@@ -174,39 +202,48 @@ def analyze(article_url):
         return None
 
 
-# PAGES FETCHING
-print("Getting all pages urls...")
-finished = False
-next_url = HOST + ALL_PAGES
-start = time.perf_counter()
-while not finished:
-    page = requests.get(next_url,
-                        headers=HEADERS,
-                        timeout=TIMEOUT)
-    soup = Bs(page.content, 'lxml')
+if not args.analyze:
+    # PAGES FETCHING
+    print("Getting all pages urls...")
+    finished = False
+    next_url = HOST + ALL_PAGES
+    start = time.perf_counter()
+    while not finished:
+        page = requests.get(next_url,
+                            headers=HEADERS,
+                            timeout=TIMEOUT)
+        soup = Bs(page.content, 'lxml')
 
-    if len(soup.select('.mw-allpages-nav')) > 0 \
-            and len(pages) == 0 \
-            and len(list(soup.select('.mw-allpages-nav')[0].children)) != 1:
-        next_url = HOST + \
-                   list(soup.select('.mw-allpages-nav')[0].children)[-1]['href']
-    else:
-        finished = True
+        all_pages_nav = soup.select('.mw-allpages-nav')
 
-    article_list = soup.select(".mw-allpages-chunk")[0].children
-    for article in article_list:
-        if article == '\n':
-            continue
-        analyze(HOST + next(article.children)['href'])
-end = time.perf_counter()
-print("\r ", end='')
-print(f"\rAll {len(pages)} pages analyzed! Took {round(end - start, 4)} ms.")
-print()
+        if len(all_pages_nav) > 0 \
+                and len(pages) == 0 \
+                and len(list(all_pages_nav[0].children)) != 1:
+            next_url = HOST + \
+                       list(all_pages_nav[0].children)[-1]['href']
+        else:
+            finished = True
+
+        article_list = soup.select(".mw-allpages-chunk")[0].children
+        for article in article_list:
+            if article == '\n':
+                continue
+            analyze(HOST + next(article.children)['href'])
+    end = time.perf_counter()
+    print("\r ", end='')
+    print(f"\r{len(pages)} pages analyzed! Took {round(end - start, 4)} ms.")
+    print()
 
 # DATASET FETCHING
 print("Preparing data for analysis...")
-CUR.execute("SELECT from_title, to_title "
-            f"FROM {TABLE_NAME}_links;")
+try:
+    CUR.execute("SELECT from_title, to_title "
+                f"FROM {TABLE_NAME}_links;")
+except psycopg2.DatabaseError:
+    print(f"Database error. Please check that the tables '{LANG}', "
+          f"'{LANG}_urls' and '{LANG}_links' exist in your database.")
+    CONN.close()
+    sys.exit(1)
 data = np.array(CUR.fetchall())
 CONN.commit()
 link_count = len(data)
