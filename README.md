@@ -1,10 +1,10 @@
 # wiki_analysis
- 
-[![](https://img.shields.io/codeclimate/maintainability/NickKaramoff/wiki_analysis.svg)](https://codeclimate.com/github/NickKaramoff/wiki_analysis)
-[![](https://img.shields.io/librariesio/github/NickKaramoff/wiki_analysis.svg)](https://libraries.io/github/NickKaramoff/wiki_analysis)  
-![](https://img.shields.io/github/license/NickKaramoff/wiki_analysis.svg)
-![](https://img.shields.io/github/last-commit/NickKaramoff/wiki_analysis.svg)
-![](https://img.shields.io/github/release-pre/NickKaramoff/wiki_analysis.svg)
+
+[![CodeClimate Maintainability](https://img.shields.io/codeclimate/maintainability/NickKaramoff/wiki_analysis.svg)](https://codeclimate.com/github/NickKaramoff/wiki_analysis)
+[![Dependency status via Libraries.io](https://img.shields.io/librariesio/github/NickKaramoff/wiki_analysis.svg)](https://libraries.io/github/NickKaramoff/wiki_analysis)  
+![GitHub License](https://img.shields.io/github/license/NickKaramoff/wiki_analysis.svg)
+![GitHub last commit date](https://img.shields.io/github/last-commit/NickKaramoff/wiki_analysis.svg)
+![GitHub latest (pre-)release](https://img.shields.io/github/release-pre/NickKaramoff/wiki_analysis.svg)
 
 This project analyzes pages of a chosen Wikipedia to find the most valuable page
 using the PageRank algorithm.
@@ -13,15 +13,16 @@ using the PageRank algorithm.
 
 This program analyzes all pages on Wikipedia of a certain language, scraping the
 urls from _Special:AllPages_. It then analyzes all the crosslinks between pages
-and calculates the rank of every page using the PageRank algorithm (20 
+and calculates the rank of every page using the PageRank algorithm (20
 iterations).
 
 ## Speed
 
-Speed of the algorithm depends on data size and your internet connection.
+The speed of the algorithm depends on data size and your internet connection.
 On my 60 Mbit/s network fetching and analyzing the
-[Greenlandic Wikipedia](https://kl.wikipedia.org) with 1756 unique pages took an
-hour. Calculating rank takes about 2 seconds on a MacBook Pro 15 2016.
+[Greenlandic Wikipedia](https://kl.wikipedia.org) with 1756 unique pages (blank
+included) took ~60 minutes. Calculating rank took about 2 seconds on a MacBook
+Pro 15 2016.
 
 ## How to Run
 
