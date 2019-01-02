@@ -20,7 +20,4 @@ script:
   - coverage run wiki_analysis.py din -d
 after_script:
   - coverage xml
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]];
-  - then ./cc-test-reporter format-coverage -t coverage.py -p "";
-  - ./cc-test-reporter upload-coverage;
-  - fi
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]];then ./cc-test-reporter format-coverage -t coverage.py -p "" && ./cc-test-reporter upload-coverage; fi
