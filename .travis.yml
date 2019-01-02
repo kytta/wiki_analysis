@@ -2,7 +2,6 @@ language: python
 dist: trusty
 sudo: required
 python:
-  - "3.5"
   - "3.6"
 addons:
   postgresql: "9.5"
@@ -21,4 +20,7 @@ script:
   - coverage run wiki_analysis.py din -d
 after_script:
   - coverage xml
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]];
+  - then ./cc-test-reporter format-coverage -t coverage.py -p "";
+  - ./cc-test-reporter upload-coverage;
+  - fi
