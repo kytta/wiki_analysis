@@ -29,7 +29,7 @@ Pro 15 2016.
 
 ## How to Run
 
-1. Make sure you have Python 3.x installed
+1. Make sure you have Python 3.6 or higher installed
 2. Download and unpack wiki_analysis
 3. Run `python3 -m pip install -r requirements.txt` to install dependencies
 4. Put the database credentials into `config.yml`
