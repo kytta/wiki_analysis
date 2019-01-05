@@ -216,14 +216,14 @@ if not args.analyze:
 
         all_pages_nav = soup.select('.mw-allpages-nav')
 
-        if (len(all_pages_nav) > 0 \
-                and len(list(all_pages_nav[0].children)) != 1) \
+        finished = True
+        if len(all_pages_nav) > 0:
+            if len(list(all_pages_nav[0].children)) != 1 \
                 or len(list(all_pages_nav[0].children)) == 1 \
                 and len(pages) == 0:
-            next_url = HOST + \
-                       list(all_pages_nav[0].children)[-1]['href']
-        else:
-            finished = True
+                next_url = HOST + \
+                           list(all_pages_nav[0].children)[-1]['href']
+                finished = False
 
         article_list = soup.select(".mw-allpages-chunk")[0].children
         for article in article_list:
@@ -232,7 +232,7 @@ if not args.analyze:
             analyze(HOST + next(article.children)['href'])
     end = time.perf_counter()
     print("\r ", end='')
-    print(f"\r{len(pages)} pages analyzed! Took {round(end - start, 4)} ms.")
+    print(f"\r{len(pages)} pages analyzed! Took {round(end - start, 3)} s.")
     print()
 
 # DATASET FETCHING
@@ -252,6 +252,7 @@ if link_count == 0:
     CONN.close()
     print("There are no links; can't analyze.")
     sys.exit(0)
+start = time.perf_counter()
 from_titles = list(n[0] for n in data[np.ix_(range(link_count), [0])].tolist())
 to_titles = list(n[0] for n in data[np.ix_(range(link_count), [1])].tolist())
 all_titles = list(sorted(set(from_titles + to_titles)))
@@ -278,7 +279,8 @@ for i in range(n):
         m[np.ix_(range(n), [i])] /= col_sum
 for i in range(ITERATIONS):
     v = (b * m).dot(v) + ((1 - b) / n) * e
-print("Calculation finished.")
+end = time.perf_counter()
+print(f"Calculation finished. Took {round(end - start, 3)} s.")
 print()
 
 # DATA OUTPUT
