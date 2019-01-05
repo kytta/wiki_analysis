@@ -22,10 +22,9 @@ iterations).
 ## Speed
 
 The speed of the algorithm depends on data size and your internet connection.
-On my 60 Mbit/s network fetching and analyzing the
-[Greenlandic Wikipedia](https://kl.wikipedia.org) with 1756 unique pages (blank
-included) took ~60 minutes. Calculating rank took about 2 seconds on a MacBook
-Pro 15 2016.
+On my 60 Mbit/s network fetching and analyzing takes around 0.65 seconds per
+page. Calculating rank takes about 1 millisecond per page on a MacBook Pro 15
+2016.
 
 ## How to Run
 
