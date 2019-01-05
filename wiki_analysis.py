@@ -216,8 +216,10 @@ if not args.analyze:
 
         all_pages_nav = soup.select('.mw-allpages-nav')
 
-        if len(all_pages_nav) > 0 \
-                and len(list(all_pages_nav[0].children)) != 1:
+        if (len(all_pages_nav) > 0 \
+                and len(list(all_pages_nav[0].children)) != 1) \
+                or len(list(all_pages_nav[0].children)) == 1 \
+                and len(pages) == 0:
             next_url = HOST + \
                        list(all_pages_nav[0].children)[-1]['href']
         else:
