@@ -1,16 +1,8 @@
 # wiki_analysis
 
-[![Travis CI build status](https://img.shields.io/travis/NickKaramoff/wiki_analysis.svg)](https://travis-ci.org/NickKaramoff/wiki_analysis)
-[![CodeClimate Maintainability](https://img.shields.io/codeclimate/maintainability/NickKaramoff/wiki_analysis.svg)](https://codeclimate.com/github/NickKaramoff/wiki_analysis)
-[![Codecov coverage](https://img.shields.io/codecov/c/github/NickKaramoff/wiki_analysis.svg)](https://codecov.io/gh/NickKaramoff/wiki_analysis)
-[![Dependency status via Libraries.io](https://img.shields.io/librariesio/github/NickKaramoff/wiki_analysis.svg)](https://libraries.io/github/NickKaramoff/wiki_analysis)  
-![Supported Python version](https://img.shields.io/badge/python-3.6%20|%203.7-blue.svg)
-[![GitHub License](https://img.shields.io/github/license/NickKaramoff/wiki_analysis.svg)](LICENSE)
-![GitHub last commit date](https://img.shields.io/github/last-commit/NickKaramoff/wiki_analysis.svg)
-![GitHub latest (pre-)release](https://img.shields.io/github/release-pre/NickKaramoff/wiki_analysis.svg)
+![NOT MAINTAINED](https://badgen.net/badge/maintained/no/red)
 
-This project analyzes pages of a chosen Wikipedia to find the most valuable page
-using the PageRank algorithm.
+> Python script that ranks Wikipedia pages using PageRank algorithm
 
 ## How it works
 
