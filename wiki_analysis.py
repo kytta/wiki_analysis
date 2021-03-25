@@ -1,5 +1,3 @@
-# Copyright (c) 2019 Nikita Karamov <nick@karamoff.ru>
-
 import argparse
 import shutil
 import sys
